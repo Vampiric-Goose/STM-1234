@@ -3598,18 +3598,18 @@
           height: 2, // Default connection height
         },
         skillImages: [
-          "/axe-hammer-grey.png",
-          "/fire-orb.png",
-          "/fire-rock.png",
-          "/flaming-spear.png",
-          "/flaming-staff.png",
-          "/golden-arrow.png",
-          "/gray-spear.png",
-          "/ornate-spear.png",
-          "/skull-blue.png",
-          "/small-trident.png",
-          "/spectral-dagger.png",
-          "/water-sword.png",
+          "axe-hammer-grey.png",
+          "fire-orb.png",
+          "fire-rock.png",
+          "flaming-spear.png",
+          "flaming-staff.png",
+          "golden-arrow.png",
+          "gray-spear.png",
+          "ornate-spear.png",
+          "skull-blue.png",
+          "small-trident.png",
+          "spectral-dagger.png",
+          "water-sword.png",
         ],
       };
 
@@ -5567,10 +5567,10 @@
           // Add the parsing functions
           parseSkills(skills) {
             let validImagesString =
-              "/axe-hammer-grey.png, /fire-orb.png, /fire-rock.png, /flaming-spear.png, /flaming-staff.png, /golden-arrow.png, /gray-spear.png, /ornate-spear.png, /skull-blue.png, /small-trident.png, /spectral-dagger.png, /water-sword.png";
+              "axe-hammer-grey.png, fire-orb.png, fire-rock.png, flaming-spear.png, flaming-staff.png, golden-arrow.png, gray-spear.png, ornate-spear.png, skull-blue.png, small-trident.png, spectral-dagger.png, water-sword.png";
             validImagesString = validImagesString.replace("/", "");
             const validImagesList = validImagesString.split(", /");
-            const defaultImageString = "/fire-rock.png";
+            const defaultImageString = "fire-rock.png";
 
             return skills.map((skill) => {
               const skillImage = skill["Skill Image"].replace("/", "");
@@ -5583,7 +5583,7 @@
 
           parseBackgroundImage(backgroundImage) {
             let validImagesString =
-              "/grass-ancient.jpg, /desert-academy-ruins.jpg, /purple-spectral-rocks.png";
+              "grass-ancient.jpg, desert-academy-ruins.jpg, purple-spectral-rocks.png";
             validImagesString = validImagesString.replace("/", "");
             const validImagesList = validImagesString.split(", /");
             const defaultImageString = "/grass-ancient.jpg";

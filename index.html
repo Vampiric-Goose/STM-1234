@@ -6350,8 +6350,8 @@ if (incomingConnections.length > 0) {
     const prereqSkill = this.skills.find((s) => s.id === conn.from);
     if (!prereqSkill) return true;
 
-    const requiredPoints = isMaxMode ? prereqSkill.maxPoints : 1;
-    return prereqSkill.currentPoints >= requiredPoints;
+    const requiredPoints = isMaxMode ? (prereqSkill.maxPoints || 1) : 1;
+    return (prereqSkill.currentPoints || 0) >= requiredPoints;
   });
 
   if (!allPrereqsUnlocked) {
@@ -6360,8 +6360,8 @@ if (incomingConnections.length > 0) {
         .filter((conn) => {
           const prereqSkill = this.skills.find((s) => s.id === conn.from);
           if (!prereqSkill) return false;
-          const required = isMaxMode ? prereqSkill.maxPoints : 1;
-          return prereqSkill.currentPoints < required;
+          const required = isMaxMode ? (prereqSkill.maxPoints || 1) : 1;
+          return (prereqSkill.currentPoints || 0) < required;
         })
         .map((conn) => {
           const prereqSkill = this.skills.find((s) => s.id === conn.from);
@@ -6384,41 +6384,7 @@ if (incomingConnections.length > 0) {
     }
     return false;
   }
-} else {
-                // 'one' mode - Check if at least one prerequisite skill is unlocked (including through mutual exclusivity)
-                const hasUnlockedPrereq = incomingConnections.some((conn) => {
-                  const prereqSkill = this.skills.find((s) => s.id === conn.from);
-                  return this.isPrerequisiteSatisfied(prereqSkill);
-                });
-
-                if (!hasUnlockedPrereq) {
-                  if (option === "show warning") {
-                    const prereqSkills = incomingConnections
-                      .map((conn) => {
-                        const prereqSkill = this.skills.find((s) => s.id === conn.from);
-                        return prereqSkill?.name || "Unknown";
-                      })
-                      .join(" or ");
-
-                    // Show toast notification for prerequisite requirement
-                    const toast = document.createElement("div");
-                    toast.className = "toast-notification";
-                    toast.textContent = `${skill.name} requires: ${prereqSkills} to unlock`;
-
-                    document.body.appendChild(toast);
-
-                    toast.offsetHeight;
-                    toast.classList.add("show");
-
-                    setTimeout(() => {
-                      toast.classList.remove("show");
-                      setTimeout(() => toast.remove(), 300);
-                    }, 3000);
-                  }
-                  return false;
-                }
-              }
-            }
+}
 
             return true;
           },

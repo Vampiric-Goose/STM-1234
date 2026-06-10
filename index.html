@@ -7745,7 +7745,7 @@
               }
             }
           },
-          getUnmetRequirements(skill) {
+                    getUnmetRequirements(skill) {
             const requirements = [];
 
             // Check mutual exclusivity
@@ -7794,37 +7794,51 @@
               }
             }
 
-            // Check prerequisite skills
+            // Check prerequisite skills (now with per-skill override support)
             const incomingConnections = this.connections.filter((conn) => conn.to === skill.id);
-            if (incomingConnections.length > 0 && this.prerequisiteMode !== "none") {
-              if (this.prerequisiteMode === "all") {
-                // Check if ALL prerequisite skills are unlocked
-                const missingPrereqs = incomingConnections
-                  .filter((conn) => {
-                    const prereqSkill = this.skills.find((s) => s.id === conn.from);
-                    return !prereqSkill || prereqSkill.currentPoints === 0;
-                  })
-                  .map((conn) => {
-                    const prereqSkill = this.skills.find((s) => s.id === conn.from);
-                    return prereqSkill?.name || "Unknown";
-                  });
+            if (incomingConnections.length > 0) {
+              const effectiveMode = (skill.prerequisiteModeOverride && skill.prerequisiteModeOverride !== "global") 
+                ? skill.prerequisiteModeOverride 
+                : this.prerequisiteMode;
 
-                if (missingPrereqs.length > 0) {
-                  requirements.push(`Requires: ${missingPrereqs.join(", ")}`);
-                }
+              if (effectiveMode === "none") {
+                // No requirements
               } else {
-                // 'one' mode - check if at least one prerequisite skill is unlocked
-                const hasUnlockedPrereq = incomingConnections.some((conn) => {
-                  const prereqSkill = this.skills.find((s) => s.id === conn.from);
-                  return prereqSkill && prereqSkill.currentPoints > 0;
-                });
+                const isMaxMode = effectiveMode === "max";
 
-                if (!hasUnlockedPrereq) {
-                  const prereqNames = incomingConnections.map((conn) => {
+                if (effectiveMode === "one") {
+                  // At least one prerequisite
+                  const hasUnlockedPrereq = incomingConnections.some((conn) => {
                     const prereqSkill = this.skills.find((s) => s.id === conn.from);
-                    return prereqSkill?.name || "Unknown";
+                    if (!prereqSkill) return false;
+                    const requiredPoints = isMaxMode ? (prereqSkill.maxPoints || 1) : 1;
+                    return (prereqSkill.currentPoints || 0) >= requiredPoints;
                   });
-                  requirements.push(`Requires one of: ${prereqNames.join(" or ")}`);
+
+                  if (!hasUnlockedPrereq) {
+                    const prereqNames = incomingConnections.map((conn) => {
+                      const prereqSkill = this.skills.find((s) => s.id === conn.from);
+                      return prereqSkill?.name || "Unknown";
+                    });
+                    requirements.push(`Requires one of: ${prereqNames.join(" or ")}${isMaxMode ? ' (maxed)' : ''}`);
+                  }
+                } else {
+                  // "all" or "max" — all prerequisites
+                  const missingPrereqs = incomingConnections
+                    .filter((conn) => {
+                      const prereqSkill = this.skills.find((s) => s.id === conn.from);
+                      if (!prereqSkill) return false;
+                      const required = isMaxMode ? (prereqSkill.maxPoints || 1) : 1;
+                      return (prereqSkill.currentPoints || 0) < required;
+                    })
+                    .map((conn) => {
+                      const prereqSkill = this.skills.find((s) => s.id === conn.from);
+                      return prereqSkill?.name || "Unknown";
+                    });
+
+                  if (missingPrereqs.length > 0) {
+                    requirements.push(`Requires: ${missingPrereqs.join(", ")}${isMaxMode ? ' (fully maxed)' : ''}`);
+                  }
                 }
               }
             }

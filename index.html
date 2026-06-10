@@ -2740,16 +2740,16 @@
               />
             </div>
             <div class="option-group">
-              <label title="This can be overridden in each skill's individual settings"
-                >Skill Unlock</label
-              >
-              <select v-model="prerequisiteMode">
-                <option value="none">No Previous Skills Required</option>
-                <option value="one">At Least One Skill Required</option>
-                <option value="max">Previous Skills must be Maxed</option>
-                <option default value="all">All Previous Skills Required</option>
-              </select>
-            </div>
+  <label title="This can be overridden in each skill's individual settings"
+    >Skill Unlock</label
+  >
+  <select v-model="prerequisiteMode">
+    <option value="none">No Previous Skills Required</option>
+    <option value="one">At Least One Skill Required</option>
+    <option value="all">All Previous Skills (at least 1 point)</option>
+    <option value="max">All Previous Skills (must be fully maxed)</option>
+  </select>
+</div>
             <div class="option-group">
               <label> Skill Unlock Display </label>
               <select v-model="hideLockedSkills">

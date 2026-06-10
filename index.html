@@ -3330,17 +3330,15 @@
               </div>
 
               <div class="option-group">
-                <label
-                  class="option-edit-label"
-                  title="This overrides the global unlock setting for the entire tree. Per skill settings coming soon."
-                  >Required To Unlock This Skill</label
-                >
-                <select v-model="prerequisiteMode" class="option-group-select">
-                  <option value="none">No Previous Skills Required</option>
-                  <option value="one">At Least One Skill Required</option>
-                  <option default value="all">All Previous Skills Required</option>
-                </select>
-              </div>
+  <label class="option-edit-label" title="Per-skill override for prerequisite mode (connections define 'which' skills).">Required To Unlock This Skill</label>
+  <select v-model="editingSkill.prerequisiteModeOverride" class="option-group-select">
+    <option value="global">Use Global Setting</option>
+    <option value="none">No Previous Skills Required</option>
+    <option value="one">At Least One Prerequisite</option>
+    <option value="all">All Prerequisites Required</option>
+    <option value="max">All Prerequisites Maxed</option>
+  </select>
+</div>
 
               <!-- <div>
                 <label title="The amount of points needed for this skill to be fully unlocked"
@@ -6340,11 +6338,15 @@
             // Check prerequisites (incoming connections)
 const incomingConnections = this.connections.filter((conn) => conn.to === skill.id);
 if (incomingConnections.length > 0) {
-  if (this.prerequisiteMode === "none") {
-    return true;
-  } 
+  const effectiveMode = skill.prerequisiteModeOverride && skill.prerequisiteModeOverride !== "global" 
+    ? skill.prerequisiteModeOverride 
+    : this.prerequisiteMode;
 
-  const isMaxMode = this.prerequisiteMode === "max";
+  if (effectiveMode === "none") {
+    return true;
+  }
+
+  const isMaxMode = effectiveMode === "max";
 
   const allPrereqsUnlocked = incomingConnections.every((conn) => {
     const prereqSkill = this.skills.find((s) => s.id === conn.from);

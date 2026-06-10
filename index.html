@@ -6335,58 +6335,83 @@
               }
             }
 
-            // Check prerequisites (incoming connections)
-const incomingConnections = this.connections.filter((conn) => conn.to === skill.id);
-if (incomingConnections.length > 0) {
-  const effectiveMode = skill.prerequisiteModeOverride && skill.prerequisiteModeOverride !== "global" 
-    ? skill.prerequisiteModeOverride 
-    : this.prerequisiteMode;
+                       // Check prerequisites (incoming connections)
+            const incomingConnections = this.connections.filter((conn) => conn.to === skill.id);
+            if (incomingConnections.length > 0) {
+              const effectiveMode = (skill.prerequisiteModeOverride && skill.prerequisiteModeOverride !== "global") 
+                ? skill.prerequisiteModeOverride 
+                : this.prerequisiteMode;
 
-  if (effectiveMode === "none") {
-    return true;
-  }
+              if (effectiveMode === "none") {
+                return true;
+              }
 
-  const isMaxMode = effectiveMode === "max";
+              const isMaxMode = effectiveMode === "max";
 
-  const allPrereqsUnlocked = incomingConnections.every((conn) => {
-    const prereqSkill = this.skills.find((s) => s.id === conn.from);
-    if (!prereqSkill) return true;
+              let prereqsSatisfied = false;
 
-    const requiredPoints = isMaxMode ? (prereqSkill.maxPoints || 1) : 1;
-    return (prereqSkill.currentPoints || 0) >= requiredPoints;
-  });
+              if (effectiveMode === "one") {
+                // At least ONE prerequisite satisfied
+                prereqsSatisfied = incomingConnections.some((conn) => {
+                  const prereqSkill = this.skills.find((s) => s.id === conn.from);
+                  if (!prereqSkill) return false;
+                  const requiredPoints = isMaxMode ? (prereqSkill.maxPoints || 1) : 1;
+                  return (prereqSkill.currentPoints || 0) >= requiredPoints;
+                });
+              } else {
+                // "all" or "max" — ALL prerequisites satisfied
+                prereqsSatisfied = incomingConnections.every((conn) => {
+                  const prereqSkill = this.skills.find((s) => s.id === conn.from);
+                  if (!prereqSkill) return true;
+                  const requiredPoints = isMaxMode ? (prereqSkill.maxPoints || 1) : 1;
+                  return (prereqSkill.currentPoints || 0) >= requiredPoints;
+                });
+              }
 
-  if (!allPrereqsUnlocked) {
-    if (option === "show warning") {
-      const missingPrereqs = incomingConnections
-        .filter((conn) => {
-          const prereqSkill = this.skills.find((s) => s.id === conn.from);
-          if (!prereqSkill) return false;
-          const required = isMaxMode ? (prereqSkill.maxPoints || 1) : 1;
-          return (prereqSkill.currentPoints || 0) < required;
-        })
-        .map((conn) => {
-          const prereqSkill = this.skills.find((s) => s.id === conn.from);
-          return prereqSkill ? prereqSkill.name : "Unknown";
-        })
-        .join(", ");
+              if (!prereqsSatisfied) {
+                if (option === "show warning") {
+                  const isOneMode = effectiveMode === "one";
+                  let missingPrereqs = [];
 
-      const toast = document.createElement("div");
-      toast.className = "toast-notification";
-      toast.textContent = `${skill.name} requires: ${missingPrereqs} ${isMaxMode ? '(fully maxed)' : ''}`;
-      document.body.appendChild(toast);
+                  if (isOneMode) {
+                    // For "one" mode, show all options
+                    missingPrereqs = incomingConnections
+                      .map((conn) => {
+                        const prereqSkill = this.skills.find((s) => s.id === conn.from);
+                        return prereqSkill ? prereqSkill.name : "Unknown";
+                      })
+                      .join(" or ");
+                  } else {
+                    missingPrereqs = incomingConnections
+                      .filter((conn) => {
+                        const prereqSkill = this.skills.find((s) => s.id === conn.from);
+                        if (!prereqSkill) return false;
+                        const required = isMaxMode ? (prereqSkill.maxPoints || 1) : 1;
+                        return (prereqSkill.currentPoints || 0) < required;
+                      })
+                      .map((conn) => {
+                        const prereqSkill = this.skills.find((s) => s.id === conn.from);
+                        return prereqSkill ? prereqSkill.name : "Unknown";
+                      })
+                      .join(", ");
+                  }
 
-      toast.offsetHeight;
-      toast.classList.add("show");
+                  const toast = document.createElement("div");
+                  toast.className = "toast-notification";
+                  toast.textContent = `${skill.name} requires: ${missingPrereqs} ${isMaxMode ? '(fully maxed)' : ''}`;
+                  document.body.appendChild(toast);
 
-      setTimeout(() => {
-        toast.classList.remove("show");
-        setTimeout(() => toast.remove(), 300);
-      }, 3000);
-    }
-    return false;
-  }
-}
+                  toast.offsetHeight;
+                  toast.classList.add("show");
+
+                  setTimeout(() => {
+                    toast.classList.remove("show");
+                    setTimeout(() => toast.remove(), 300);
+                  }, 3000);
+                }
+                return false;
+              }
+            }
 
             return true;
           },

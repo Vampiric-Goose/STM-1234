@@ -2746,6 +2746,7 @@
               <select v-model="prerequisiteMode">
                 <option value="none">No Previous Skills Required</option>
                 <option value="one">At Least One Skill Required</option>
+                <option value="max">Previous Skills must be Maxed</option>
                 <option default value="all">All Previous Skills Required</option>
               </select>
             </div>
@@ -6337,49 +6338,53 @@
             }
 
             // Check prerequisites (incoming connections)
-            const incomingConnections = this.connections.filter((conn) => conn.to === skill.id);
-            if (incomingConnections.length > 0) {
-              if (this.prerequisiteMode === "none") {
-                return true;
-              } else if (this.prerequisiteMode === "all") {
-                // Check if ALL prerequisite skills are unlocked (including through mutual exclusivity)
-                const allPrereqsUnlocked = incomingConnections.every((conn) => {
-                  const prereqSkill = this.skills.find((s) => s.id === conn.from);
-                  return this.isPrerequisiteSatisfied(prereqSkill);
-                });
+const incomingConnections = this.connections.filter((conn) => conn.to === skill.id);
+if (incomingConnections.length > 0) {
+  if (this.prerequisiteMode === "none") {
+    return true;
+  } 
 
-                if (!allPrereqsUnlocked) {
-                  if (option === "show warning") {
-                    // Show toast notification for prerequisite requirement
-                    const toast = document.createElement("div");
-                    toast.className = "toast-notification";
+  const isMaxMode = this.prerequisiteMode === "max";
 
-                    // Get list of missing prerequisites
-                    const missingPrereqs = incomingConnections
-                      .filter((conn) => {
-                        const prereqSkill = this.skills.find((s) => s.id === conn.from);
-                        return !this.isPrerequisiteSatisfied(prereqSkill);
-                      })
-                      .map((conn) => {
-                        const prereqSkill = this.skills.find((s) => s.id === conn.from);
-                        return prereqSkill?.name || "Unknown";
-                      })
-                      .join(", ");
+  const allPrereqsUnlocked = incomingConnections.every((conn) => {
+    const prereqSkill = this.skills.find((s) => s.id === conn.from);
+    if (!prereqSkill) return true;
 
-                    toast.textContent = `${skill.name} requires: ${missingPrereqs} to unlock`;
-                    document.body.appendChild(toast);
+    const requiredPoints = isMaxMode ? prereqSkill.maxPoints : 1;
+    return prereqSkill.currentPoints >= requiredPoints;
+  });
 
-                    toast.offsetHeight;
-                    toast.classList.add("show");
+  if (!allPrereqsUnlocked) {
+    if (option === "show warning") {
+      const missingPrereqs = incomingConnections
+        .filter((conn) => {
+          const prereqSkill = this.skills.find((s) => s.id === conn.from);
+          if (!prereqSkill) return false;
+          const required = isMaxMode ? prereqSkill.maxPoints : 1;
+          return prereqSkill.currentPoints < required;
+        })
+        .map((conn) => {
+          const prereqSkill = this.skills.find((s) => s.id === conn.from);
+          return prereqSkill ? prereqSkill.name : "Unknown";
+        })
+        .join(", ");
 
-                    setTimeout(() => {
-                      toast.classList.remove("show");
-                      setTimeout(() => toast.remove(), 300);
-                    }, 3000);
-                  }
-                  return false;
-                }
-              } else {
+      const toast = document.createElement("div");
+      toast.className = "toast-notification";
+      toast.textContent = `${skill.name} requires: ${missingPrereqs} ${isMaxMode ? '(fully maxed)' : ''}`;
+      document.body.appendChild(toast);
+
+      toast.offsetHeight;
+      toast.classList.add("show");
+
+      setTimeout(() => {
+        toast.classList.remove("show");
+        setTimeout(() => toast.remove(), 300);
+      }, 3000);
+    }
+    return false;
+  }
+} else {
                 // 'one' mode - Check if at least one prerequisite skill is unlocked (including through mutual exclusivity)
                 const hasUnlockedPrereq = incomingConnections.some((conn) => {
                   const prereqSkill = this.skills.find((s) => s.id === conn.from);
